@@ -1,16 +1,32 @@
-select: 'test'
-
+selects:
   - server: ZgmjLog
-    - name: 'user_id'
-      sql: 'SELECT DISTINCT playerid FROM chess_login_2018_05_24'
-      comment: '从表chess_login_2018_05_24获取当天登录的玩家ID'
-
+    statments:
+      - id: 0
+        based: ~
+        names:
+          - palyer_id
+        # sql: 'SELECT DISTINCT playerid FROM chess_login_2018_05_24'
+        sql: 'show databases'
+        comment: '从表chess_login_2018_05_24获取当天登录的玩家ID'
   - server: ZgmjGame
-    - name: 'bind_code'
-      sql: 'SELECT id, bingAgentId FROM `tb_player` WHERE id IN {user_id}'
-      comment: '从tb_player获取上一步中登录ID的代理绑定Code'
-
-  - server: ZgmjAgent
-    - name: 'agent_id'
-      sql: 'SELECT a.login_id, a.`level`, a.`name`, b.`name`, b.login_id, a.bind_code FROM `agent` a LEFT JOIN agent b ON a.parent_id=b.id WHERE a.bind_code IN {bind_code}'
-      comment: '从表agent中查询需要的相关信息'
+    statments:
+      - id: 1
+        based: 0
+        names:
+        - player_id
+        - bind_id
+        # sql: 'SELECT id, bingAgentId FROM `tb_player` WHERE id IN {player_id}'
+        sql: 'show tables'
+        comment: '从tb_player获取上一步中登录ID的代理绑定Code'
+  # - server: ZgmjAgent
+    # statments:
+      # - id: 2
+        # based: 1
+        # names:
+        # - bind_agent_id
+        # - bind_agent_level
+        # - bind_agent_name
+        # - parent_id
+        # - bind_id
+        # sql: 'SELECT a.login_id, a.`level`, a.`name`, b.`name`, b.login_id, a.bind_code FROM `agent` a LEFT JOIN agent b ON a.parent_id=b.id WHERE a.bind_code IN {bind_id}'
+        # comment: '从表agent中查询需要的相关信息'

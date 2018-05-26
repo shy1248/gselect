@@ -10,7 +10,6 @@
 @Desc: --
 """
 
-from abc import ABCMeta
 
 import pymysql
 from sshtunnel import SSHTunnelForwarder
@@ -18,7 +17,14 @@ from sshtunnel import SSHTunnelForwarder
 import const
 
 
-class Server(object, metaclass=ABCMeta):
+def rs2list(rs, names):
+    rows = []
+    rows.append(names)
+    for r in rs:
+        rows.append(list(r))
+    return rows
+
+class Server(object):
     """
     Base class of a database server
     """
@@ -35,7 +41,7 @@ class Server(object, metaclass=ABCMeta):
         self.db_user = db_user
         self.db_pass = db_pass
 
-    def conn(self):
+    def select(self, sql):
         with SSHTunnelForwarder(
                 (self.ip, self.port),
                 ssh_username=self.username,
@@ -47,21 +53,34 @@ class Server(object, metaclass=ABCMeta):
             db = pymysql.connect(host='127.0.0.1', port=22222,
                                  user=self.db_user, passwd=self.db_pass,
                                  db=self.db, charset='utf8')
-            self.select(db)
+            cursor = db.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            return result
 
-            # for test
-            # cursor = db.cursor()
-            # sql = 'show databases;'
-            # cursor.execute(sql)
-            # result = cursor.fetchall()
-            # print(result)
+    def selects(self, statments):
+        with SSHTunnelForwarder(
+                (self.ip, self.port),
+                ssh_username=self.username,
+                ssh_password=self.passwd,
+                remote_bind_address=(self.r_ip, self.r_port),
+                local_bind_address=('0.0.0.0', 22222)
+        ) as server:
+            server.start()
+            db = pymysql.connect(host='127.0.0.1', port=22222,
+                                 user=self.db_user, passwd=self.db_pass,
+                                 db=self.db, charset='utf8')
+            cursor = db.cursor()
+            for stmt in statments:
+                id_ = stmt['id']
+                sql = stmt['sql']
+                names = stmt['names']
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                yield {id_: rs2list(result, names)}
 
-    def select(self, db):
-        '''Abstract method, implements the logic of yourself'''
-        pass
 
-
-class LymjGame(Server, metaclass=ABCMeta):
+class LymjGame(Server):
     """
     lymj game database server
     """
@@ -80,7 +99,7 @@ class LymjGame(Server, metaclass=ABCMeta):
         )
 
 
-class LymjLog(Server, metaclass=ABCMeta):
+class LymjLog(Server):
     """
     lymj log database server
     """
@@ -99,7 +118,7 @@ class LymjLog(Server, metaclass=ABCMeta):
         )
 
 
-class LymjPlayback(Server, metaclass=ABCMeta):
+class LymjPlayback(Server):
     """
     lymj playback database server
     """
@@ -118,7 +137,7 @@ class LymjPlayback(Server, metaclass=ABCMeta):
         )
 
 
-class LymjAgent(Server, metaclass=ABCMeta):
+class LymjAgent(Server):
     """
     lymj agent database server
     """
@@ -137,7 +156,7 @@ class LymjAgent(Server, metaclass=ABCMeta):
         )
 
 
-class ZgmjGame(Server, metaclass=ABCMeta):
+class ZgmjGame(Server):
     """
     zgmj game database server
     """
@@ -156,7 +175,7 @@ class ZgmjGame(Server, metaclass=ABCMeta):
         )
 
 
-class ZgmjLog(Server, metaclass=ABCMeta):
+class ZgmjLog(Server):
     """
     zgmj log database server
     """
@@ -175,7 +194,7 @@ class ZgmjLog(Server, metaclass=ABCMeta):
         )
 
 
-class ZgmjPlayback(Server, metaclass=ABCMeta):
+class ZgmjPlayback(Server):
     """
     zgmj playback database server
     """
@@ -194,7 +213,7 @@ class ZgmjPlayback(Server, metaclass=ABCMeta):
         )
 
 
-class ZgmjAgent(Server, metaclass=ABCMeta):
+class ZgmjAgent(Server):
     """
     zgmj agent databses server
     """
@@ -211,16 +230,3 @@ class ZgmjAgent(Server, metaclass=ABCMeta):
             db_user=const.DB_USER,
             db_pass=const.DB_PASS
         )
-
-
-if __name__ == '__main__':
-    ssh_ip = '58.87.67.124'
-    ssh_user = 'rdev'
-    ssh_pass = '59e6a7c0'
-    db_ip = '10.0.1.16'
-    db_user = 'readuser'
-    db_pass = 'jmdb_read'
-    db = 'ly_mj_log'
-    s = Server(ssh_ip, 22, ssh_user, ssh_pass, db_ip, 3306, db, db_user,
-               db_pass)
-    s.conn()
