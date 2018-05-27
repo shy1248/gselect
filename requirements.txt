@@ -2,7 +2,10 @@ asn1crypto==0.24.0
 bcrypt==3.1.4
 cffi==1.11.5
 cryptography==2.2.2
+et-xmlfile==1.0.1
 idna==2.6
+jdcal==1.4
+openpyxl==2.5.3
 paramiko==2.4.1
 pyasn1==0.4.3
 pycparser==2.18

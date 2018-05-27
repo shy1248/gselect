@@ -10,24 +10,53 @@
 @Desc: --
 """
 
+import time
+import logging
+from functools import wraps
 
 import pymysql
 from sshtunnel import SSHTunnelForwarder
 
 import const
 
+logging.basicConfig(
+    filename='./select.log',
+    format='%(asctime)s :%(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S %p',
+    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def rs2list(rs, names):
+
+def signaleton(cls):
+    instance = {}
+
+    @wraps(cls)
+    def getinstance(*args, **kwargs):
+        if cls not in instance:
+            instance[cls] = cls(*args, **kwargs)
+        return instance[cls]
+
+    return getinstance
+
+
+def rs2list(rs):
     rows = []
-    rows.append(names)
     for r in rs:
         rows.append(list(r))
     return rows
+
 
 class Server(object):
     """
     Base class of a database server
     """
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(Server, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, ip, port, username, passwd, remote_ip, remote_port, db,
                  db_user, db_pass):
@@ -41,43 +70,39 @@ class Server(object):
         self.db_user = db_user
         self.db_pass = db_pass
 
-    def select(self, sql):
+    def do_select(self, sql):
+        # ssh tunnel connection
         with SSHTunnelForwarder(
-                (self.ip, self.port),
+            (self.ip, self.port),
                 ssh_username=self.username,
                 ssh_password=self.passwd,
                 remote_bind_address=(self.r_ip, self.r_port),
-                local_bind_address=('0.0.0.0', 22222)
-        ) as server:
-            server.start()
-            db = pymysql.connect(host='127.0.0.1', port=22222,
-                                 user=self.db_user, passwd=self.db_pass,
-                                 db=self.db, charset='utf8')
-            cursor = db.cursor()
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            return result
+                local_bind_address=('0.0.0.0', 22222)) as sshtunnel:
+            sshtunnel.start()
 
-    def selects(self, statments):
-        with SSHTunnelForwarder(
-                (self.ip, self.port),
-                ssh_username=self.username,
-                ssh_password=self.passwd,
-                remote_bind_address=(self.r_ip, self.r_port),
-                local_bind_address=('0.0.0.0', 22222)
-        ) as server:
-            server.start()
-            db = pymysql.connect(host='127.0.0.1', port=22222,
-                                 user=self.db_user, passwd=self.db_pass,
-                                 db=self.db, charset='utf8')
-            cursor = db.cursor()
-            for stmt in statments:
-                id_ = stmt['id']
-                sql = stmt['sql']
-                names = stmt['names']
-                cursor.execute(sql)
-                result = cursor.fetchall()
-                yield {id_: rs2list(result, names)}
+            # db connection
+            dbconn = pymysql.connect(
+                host='127.0.0.1',
+                port=22222,
+                user=self.db_user,
+                passwd=self.db_pass,
+                db=self.db,
+                charset='utf8')
+
+            try:
+                with dbconn.cursor() as cursor:
+                    logger.info(sql)
+                    start = int(round(time.time()*1000))
+                    cursor.execute(sql)
+                    end = int(round(time.time()*1000))
+                    print('==> Statment select finshed, cost: {} ms'.format(end - start))
+                    result = cursor.fetchall()
+                    return rs2list(result)
+            finally:
+                dbconn.close()
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class LymjGame(Server):
@@ -95,8 +120,7 @@ class LymjGame(Server):
             remote_port=const.DB_PORT,
             db=const.DB_LY_NG,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class LymjLog(Server):
@@ -114,8 +138,7 @@ class LymjLog(Server):
             remote_port=const.DB_PORT,
             db=const.DB_LY_NL,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class LymjPlayback(Server):
@@ -133,8 +156,7 @@ class LymjPlayback(Server):
             remote_port=const.DB_PORT,
             db=const.DB_LY_NP,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class LymjAgent(Server):
@@ -152,8 +174,7 @@ class LymjAgent(Server):
             remote_port=const.DB_PORT,
             db=const.DB_LY_NA,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class ZgmjGame(Server):
@@ -171,8 +192,7 @@ class ZgmjGame(Server):
             remote_port=const.DB_PORT,
             db=const.DB_ZG_NG,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class ZgmjLog(Server):
@@ -190,8 +210,7 @@ class ZgmjLog(Server):
             remote_port=const.DB_PORT,
             db=const.DB_ZG_NL,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class ZgmjPlayback(Server):
@@ -209,8 +228,7 @@ class ZgmjPlayback(Server):
             remote_port=const.DB_PORT,
             db=const.DB_ZG_NP,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
 
 
 class ZgmjAgent(Server):
@@ -228,5 +246,4 @@ class ZgmjAgent(Server):
             remote_port=const.DB_PORT,
             db=const.DB_ZG_NA,
             db_user=const.DB_USER,
-            db_pass=const.DB_PASS
-        )
+            db_pass=const.DB_PASS)
