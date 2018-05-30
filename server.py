@@ -10,8 +10,8 @@
 @Desc: --
 """
 
-import time
 import logging
+import time
 from functools import wraps
 
 import pymysql
@@ -73,7 +73,7 @@ class Server(object):
     def do_select(self, sql):
         # ssh tunnel connection
         with SSHTunnelForwarder(
-            (self.ip, self.port),
+                (self.ip, self.port),
                 ssh_username=self.username,
                 ssh_password=self.passwd,
                 remote_bind_address=(self.r_ip, self.r_port),
@@ -92,10 +92,11 @@ class Server(object):
             try:
                 with dbconn.cursor() as cursor:
                     logger.info(sql)
-                    start = int(round(time.time()*1000))
+                    start = int(round(time.time() * 1000))
                     cursor.execute(sql)
-                    end = int(round(time.time()*1000))
-                    print('==> Statment select finshed, cost: {} ms'.format(end - start))
+                    end = int(round(time.time() * 1000))
+                    print('==> Statment select finshed, cost: {} ms'.format(
+                        end - start))
                     result = cursor.fetchall()
                     return rs2list(result)
             finally:

@@ -10,13 +10,13 @@
 @Desc: --
 """
 
+import copy
 import os
 import re
-import copy
-import time
+from optparse import OptionParser
 
-import yaml
 import openpyxl
+import yaml
 
 from server import *
 
@@ -42,6 +42,19 @@ def autorename(path):
     return '{}_{}{}'.format(name, str(round(time.time() * 1000)), ext)
 
 
+def args_parse():
+    usage = 'Usage: %prog -p PLAYBOOK'
+    parser = OptionParser(usage, version='%prog 1.0')
+    parser.add_option('-p', '--playbook', dest='playbook',
+                      help="Parse statment from a playbook")
+
+    (options, args) = parser.parse_args()
+
+    return options.playbook
+    # if len(args) != 2:
+    #     parser.error('Incorrect number of arguments!')
+
+
 class Statment(object):
     _ids = {}
 
@@ -57,7 +70,8 @@ class Statment(object):
         if self.id_ not in Statment._ids:
             Statment._ids[self.id_] = self
         else:
-            raise RuntimeError('Duplicated statment id: {}'.format(self.id_))
+            raise RuntimeError(
+                'Duplicated statment id \'{}\''.format(self.id_))
 
     def gettitles(self):
         return list(self.names.keys())
@@ -85,7 +99,7 @@ class Statment(object):
                 found_mapping = True
                 if not stmt.result:
                     raise RuntimeError(
-                        'The statment id: {} must be excuted before when '
+                        'The statment id \'{}\' must be excuted before when '
                         'another statment based it.'.format(self.based))
 
                 data = stmt.result
@@ -94,8 +108,8 @@ class Statment(object):
                 # template key cound not found in the result
                 if not b:
                     raise RuntimeError(
-                        'Template key is: {} is not found at the resultset.'
-                        .format(i))
+                        'Template key \'{}\' is not found at the resultset.'
+                            .format(i))
 
                 for key in tkeys:
                     ind = titles.index(key)
@@ -113,8 +127,9 @@ class Statment(object):
         if found_mapping:
             return tvalues
         if not found_mapping:
-            raise RuntimeError('The statment id: {} based statment not found.'
-                               .format(self.id_))
+            raise RuntimeError(
+                'The statment id \'{}\' based statment not found.'.format(
+                    self.id_))
 
     def fmtsql(self):
         tvalues = self.template_values()
@@ -128,8 +143,7 @@ class Statment(object):
         server = globals().get(self.ser)()
         if not server:
             raise RuntimeError(
-                'Server name error! Server: {} is not defined.'.format(
-                    self.ser))
+                'Server \'{}\' is not defined.'.format(self.ser))
 
         rs = server.do_select(self.sql)
         self.result = rs
@@ -144,7 +158,7 @@ class Handler(object):
     def _save(self):
         if os.path.exists(self.path):
             new = autorename(self.path)
-            print('File {} already exist, use new file: {}'.format(
+            print('File \'{}\' already exist, use new file \'{}\''.format(
                 self.path, new))
             self.path = new
 
@@ -159,7 +173,7 @@ class Handler(object):
                 ws.cell(row=r + 1, column=c + 1, value=str(data[r][c]))
 
     def write(self, stmts):
-        print('==> Start write result to file: {} ...'.format(self.path))
+        print('==> Start write result to file \'{}\' ...'.format(self.path))
 
         self.wb.remove(self.wb.active)
         for stmt in stmts:
@@ -172,7 +186,8 @@ class Handler(object):
 
 
 if __name__ == '__main__':
-    with open('./test.yml', 'r', encoding='UTF-8') as f:
+    file = args_parse()
+    with open(file, 'r', encoding='UTF-8') as f:
         conf = yaml.load(f)
 
     stmts = []
@@ -196,7 +211,7 @@ if __name__ == '__main__':
 
             stmt = Statment(ser, id_, based, names, sql, save)
             stmts.append(stmt)
-
+    #
     for stmt in stmts:
         if stmt.id_ == 0 and stmt.based is not None:
             raise RuntimeError(
@@ -206,9 +221,7 @@ if __name__ == '__main__':
                 'The SQL in the fisrt statment cannot used templates!')
         elif stmt.id_ != 0 and stmt.has_template() and stmt.based is None:
             raise RuntimeError(
-                'A sql statment who used templates must gived a id of a '
-                'based statment. \nSql statment: {}, based id is None.'.format(
-                    stmt.sql))
+                'Sql statment \'{}\', based id is None.'.format(stmt.sql))
         elif stmt.id_ != 0 and stmt.has_template():
             sql = stmt.fmtsql()
             stmt.exec_()
