@@ -1,0 +1,34 @@
+#
+selects:
+  - server: ZgmjGame
+    statments:
+      - id: 0
+        based: ~
+        names:
+          player_id: 玩家ID
+          bind_code: 绑定Code
+          bind_time: 绑定时间
+          alive: 是否活跃(1为活跃,0为不活跃)
+        sql: SELECT p.id, p.bingAgentId, FROM_UNIXTIME(p.bindTime/1000), (CASE WHEN EXISTS (SELECT id FROM t_record_time WHERE playerId=p.id AND ctime BETWEEN '2018-05-28 00:00:00' AND '2018-05-31 00:00:00') THEN 1 ELSE 0 END) as 'alive' FROM tb_player p WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-05-28 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-05-31 00:00:00')*1000
+        save: true
+      - id: 1
+        based: ~
+        names:
+          num_of_player: 绑定玩家总数
+          num_of_agent:  绑定代理总数
+        sql: SELECT  COUNT(DISTINCT id) ,COUNT(DISTINCT bingAgentId) FROM tb_player WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-05-28 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-05-31 00:00:00')*1000
+        save: true
+
+  - server: ZgmjAgent
+    statments:
+      - id: 3
+        based: 0
+        names:
+          bind_agent_id: 绑定代理ID
+          bind_agent_level: 绑定代理级别
+          bind_agent_name: 绑定代理名称
+          bind_code: 绑定ID
+        sql: SELECT a.login_id, a.`level`, a.`name`, a.bind_code FROM agent a WHERE a.bind_code IN ( %(bind_code)s )
+        save: true
+
+handler: C:\\Users\\Administrator\\Desktop\\20180530.xlsx

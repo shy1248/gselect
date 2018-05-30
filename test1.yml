@@ -1,0 +1,48 @@
+#
+selects:
+  - server: ZgmjAgent
+    statments:
+      - id: 0
+        based: ~
+        names:
+          time: 创建时间
+          login_id: ID
+          name: 名称
+          plogin_id: 父级代理ID
+          pname: 代理名称
+          bind_code: 绑定ID
+        sql: SELECT a.time, a.login_id, a.`name`, b.login_id, b.`name`, a.bind_code FROM agent a JOIN agent b ON a.parent_id=b.id WHERE a.time>='2018-05-21 00:00:00' AND a.time<='2018-05-30 00:00:00' AND a.`level` in(1,2)
+        save: true
+
+  - server: ZgmjGame
+    statments:
+      - id: 1
+        based: 0
+        names:
+          player_id: 玩家ID
+          reg_time: 玩家注册时间
+          bind_id: 绑定代理ID
+        sql: SELECT p.id, a.reg_time, p.bingAgentId FROM `tb_player` p JOIN tb_acc a ON p.id=a.Id WHERE p.bingAgentId IN ( %(bind_code)s )
+        save: true
+      - id: 2
+        based: ~
+        names:
+          player_id: 玩家ID
+          reg_time: 玩家注册时间
+          bind_id: 绑定代理ID
+        sql: SELECT p.id, a.reg_time, p.bingAgentId FROM `tb_player` p JOIN tb_acc a ON p.id=a.Id WHERE a.reg_time>='2018-05-21 00:00:00'
+        save: true
+
+  - server: ZgmjAgent
+    statments:
+      - id: 3
+        based: 2
+        names:
+          bind_agent_id: 绑定代理ID
+          bind_agent_level: 绑定代理级别
+          bind_agent_name: 绑定代理名称
+          bind_id: 绑定ID
+        sql: SELECT a.login_id, a.`level`, a.`name`, a.bind_code FROM agent a WHERE a.bind_code IN ( %(bind_id)s )
+        save: true
+
+handler: C:\\Users\\Administrator\\Desktop\\20180529.xlsx
