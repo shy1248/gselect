@@ -24,7 +24,7 @@ template_pattern = re.compile(r'.*%\((.*)\)s.*')
 
 
 def is_subset(l1, l2):
-    '''judge list2 is a subset of list1 or not'''
+    """judge list2 is a subset of list1 or not"""
     if not l2:
         return True, None
     tmp = copy.deepcopy(l1)
@@ -45,8 +45,11 @@ def autorename(path):
 def args_parse():
     usage = 'Usage: %prog -p PLAYBOOK'
     parser = OptionParser(usage, version='%prog 1.0')
-    parser.add_option('-p', '--playbook', dest='playbook',
-                      help="Parse statment from a playbook")
+    parser.add_option(
+        '-p',
+        '--playbook',
+        dest='playbook',
+        help="Parse statment from a playbook")
 
     (options, args) = parser.parse_args()
 
@@ -58,20 +61,24 @@ def args_parse():
 class Statment(object):
     _ids = {}
 
-    def __init__(self, ser, id_, based, names, sql, save):
-        self.ser = ser
-        self.id_ = id_
-        self.based = based
-        self.names = names
-        self.sql = sql
-        self.save = save
+    def __init__(self, ser_, id__, based_, names_, sql_, save_):
+        self.ser = ser_
+        self.id_ = id__
+        self.based = based_
+        self.names = names_
+        self.sql = sql_
+        self.save = save_
         self.result = None
 
         if self.id_ not in Statment._ids:
             Statment._ids[self.id_] = self
         else:
+            raise RuntimeError('Duplicated statment id \'{}\''.format(
+                self.id_))
+
+        if self.id_ == self.based:
             raise RuntimeError(
-                'Duplicated statment id \'{}\''.format(self.id_))
+                'The statment \'{}\' can not based itself!'.format(self.id_))
 
     def gettitles(self):
         return list(self.names.keys())
@@ -80,41 +87,40 @@ class Statment(object):
         return list(self.names.values())
 
     def has_template(self):
-        '''judge a sql contant a template or not'''
+        """judge a sql contant a template or not"""
         return True if template_pattern.match(self.sql) else False
 
     def template_keys(self):
-        '''get template keys from a sql statment'''
+        """get template keys from a sql statment"""
         return template_pattern.findall(self.sql)
 
     def template_values(self):
-        '''get template valus from result list'''
-        found_mapping = False
-        tkeys = self.template_keys()
-        tvalues = []
+        """get template valus from result list"""
 
-        for stmt in stmts:
+        tkeys = self.template_keys()
+
+        for _stmt in stmts:
             # if can be found result by bsaed id
-            if self.based == stmt.id_:
-                found_mapping = True
-                if not stmt.result:
+            if self.based == _stmt.id_:
+
+                if not _stmt.result:
                     raise RuntimeError(
                         'The statment id \'{}\' must be excuted before when '
                         'another statment based it.'.format(self.based))
 
-                data = stmt.result
-                titles = stmt.gettitles()
+                data = _stmt.result
+                titles = _stmt.gettitles()
                 b, i = is_subset(titles, tkeys)
                 # template key cound not found in the result
                 if not b:
                     raise RuntimeError(
                         'Template key \'{}\' is not found at the resultset.'
-                            .format(i))
+                        .format(i))
 
                 for key in tkeys:
                     ind = titles.index(key)
                     values = []
-                    # skip the first item, who is titles
+
                     for m in range(0, len(data)):
                         value = data[m][ind]
                         # filte the column who's value is null or ''
@@ -122,11 +128,12 @@ class Statment(object):
                             values.append(str(value))
                     values_str = ', '.join(values)
                     del values
-                    tvalues.append({key: values_str})
+                    yield {key: values_str}
 
-        if found_mapping:
-            return tvalues
-        if not found_mapping:
+                break
+
+        # if not found based statment
+        else:
             raise RuntimeError(
                 'The statment id \'{}\' based statment not found.'.format(
                     self.id_))
@@ -142,8 +149,8 @@ class Statment(object):
         # get a class order by a string
         server = globals().get(self.ser)()
         if not server:
-            raise RuntimeError(
-                'Server \'{}\' is not defined.'.format(self.ser))
+            raise RuntimeError('Server \'{}\' is not defined.'.format(
+                self.ser))
 
         rs = server.do_select(self.sql)
         self.result = rs
@@ -164,21 +171,22 @@ class Handler(object):
 
         self.wb.save(self.path)
 
-    def _w_stmt(self, stmt):
-        stmt.result.insert(0, stmt.getalias())
-        data = stmt.result
+    def _w_stmt(self, _stmt):
+        # add titles
+        _stmt.result.insert(0, _stmt.getalias())
+        data = _stmt.result
         ws = self.wb.create_sheet()
         for r in range(0, len(data)):
             for c in range(0, len(data[r])):
                 ws.cell(row=r + 1, column=c + 1, value=str(data[r][c]))
 
-    def write(self, stmts):
+    def write(self, _stmts):
         print('==> Start write result to file \'{}\' ...'.format(self.path))
-
+        # delete the default sheet
         self.wb.remove(self.wb.active)
-        for stmt in stmts:
-            if stmt.save:
-                self._w_stmt(stmt)
+        for _stmt in _stmts:
+            if _stmt.save:
+                self._w_stmt(_stmt)
 
         self._save()
 
@@ -189,7 +197,7 @@ if __name__ == '__main__':
     file = args_parse()
     with open(file, 'r', encoding='UTF-8') as f:
         conf = yaml.load(f)
-
+    # pase playbook
     stmts = []
     print('==> Parser config file ...')
     for select in conf['selects']:
@@ -211,7 +219,7 @@ if __name__ == '__main__':
 
             stmt = Statment(ser, id_, based, names, sql, save)
             stmts.append(stmt)
-    #
+    # execute statment
     for stmt in stmts:
         if stmt.id_ == 0 and stmt.based is not None:
             raise RuntimeError(
@@ -220,8 +228,8 @@ if __name__ == '__main__':
             raise RuntimeError(
                 'The SQL in the fisrt statment cannot used templates!')
         elif stmt.id_ != 0 and stmt.has_template() and stmt.based is None:
-            raise RuntimeError(
-                'Sql statment \'{}\', based id is None.'.format(stmt.sql))
+            raise RuntimeError('Sql statment \'{}\', based id is None.'.format(
+                stmt.sql))
         elif stmt.id_ != 0 and stmt.has_template():
             sql = stmt.fmtsql()
             stmt.exec_()

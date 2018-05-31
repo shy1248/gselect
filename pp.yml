@@ -12,7 +12,7 @@ selects:
         sql: SELECT p.id, p.bingAgentId, FROM_UNIXTIME(p.bindTime/1000), (CASE WHEN EXISTS (SELECT id FROM t_record_time WHERE playerId=p.id AND ctime BETWEEN '2018-05-28 00:00:00' AND '2018-05-31 00:00:00') THEN 1 ELSE 0 END) as 'alive' FROM tb_player p WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-05-28 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-05-31 00:00:00')*1000
         save: true
       - id: 1
-        based: ~
+        based: 0
         names:
           num_of_player: 绑定玩家总数
           num_of_agent:  绑定代理总数
@@ -21,7 +21,7 @@ selects:
 
   - server: ZgmjAgent
     statments:
-      - id: 3
+      - id: 2
         based: 0
         names:
           bind_agent_id: 绑定代理ID
