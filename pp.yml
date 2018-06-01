@@ -16,7 +16,7 @@ selects:
         names:
           num_of_player: 绑定玩家总数
           num_of_agent:  绑定代理总数
-        sql: SELECT  COUNT(DISTINCT id) ,COUNT(DISTINCT bingAgentId) FROM tb_player WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-05-28 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-05-31 00:00:00')*1000
+        sql: SELECT  COUNT(DISTINCT id), COUNT(DISTINCT bingAgentId) FROM tb_player WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-05-28 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-05-31 00:00:00')*1000
         save: true
 
   - server: ZgmjAgent

@@ -5,7 +5,7 @@
 @Copyright (c) 2018 yushuibo. All rights reserved.
 @Licence: GPL-2
 @Email: hengchen2005@gmail.com
-@Create: gselect.py.py
+@Create: gselect.py
 @Last Modified: 2018/5/25 下午 05:28
 @Desc: --
 """
@@ -27,6 +27,7 @@ def is_subset(l1, l2):
     """judge list2 is a subset of list1 or not"""
     if not l2:
         return True, None
+
     tmp = copy.deepcopy(l1)
     for i in l2:
         try:
@@ -34,6 +35,7 @@ def is_subset(l1, l2):
         except ValueError:
             return False, i
     del tmp
+
     return True, None
 
 
@@ -162,7 +164,7 @@ class Handler(object):
         self.wb = openpyxl.Workbook()
         self.st_ind = 0
 
-    def _save(self):
+    def __save(self):
         if os.path.exists(self.path):
             new = autorename(self.path)
             print('File \'{}\' already exist, use new file \'{}\''.format(
@@ -171,7 +173,7 @@ class Handler(object):
 
         self.wb.save(self.path)
 
-    def _w_stmt(self, _stmt):
+    def __w_stmt(self, _stmt):
         # add titles
         _stmt.result.insert(0, _stmt.getalias())
         data = _stmt.result
@@ -186,9 +188,9 @@ class Handler(object):
         self.wb.remove(self.wb.active)
         for _stmt in _stmts:
             if _stmt.save:
-                self._w_stmt(_stmt)
+                self.__w_stmt(_stmt)
 
-        self._save()
+        self.__save()
 
         print('==> Save done, enjoy!')
 
