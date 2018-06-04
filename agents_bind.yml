@@ -1,4 +1,4 @@
-#
+# 查询某时间段玩家绑定的代理信息
 selects:
   - server: ZgmjGame
     statments:

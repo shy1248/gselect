@@ -1,4 +1,7 @@
-#
+# 1：从21号的新增代理的创建时间   以及代理id    代理名称   上级代理账号    代理名称
+# 2：从21号的新增代理的绑定玩家id  和玩家创建时间
+# 3：重21号开始新增的玩家  绑定代理的情况: 玩家id  注册时间   绑定账号
+
 selects:
   - server: ZgmjAgent
     statments:
@@ -11,7 +14,7 @@ selects:
           plogin_id: 父级代理ID
           pname: 代理名称
           bind_code: 绑定ID
-        sql: SELECT a.time, a.login_id, a.`name`, b.login_id, b.`name`, a.bind_code FROM agent a JOIN agent b ON a.parent_id=b.id WHERE a.time>='2018-05-21 00:00:00' AND a.time<='2018-05-30 00:00:00' AND a.`level` in(1,2)
+        sql: SELECT a.time, a.login_id, a.`name`, b.login_id, b.`name`, a.bind_code FROM agent a JOIN agent b ON a.parent_id=b.id WHERE a.time>='2018-05-21 00:00:00' AND a.time<='2018-06-04 00:00:00' AND a.`level` in(1,2)
         save: true
 
   - server: ZgmjGame

@@ -1,0 +1,43 @@
+# 统计一下6.1~6.3号自贡麻将代理新增绑定玩家数据，而且这些玩家是要上过游戏的活跃用户
+# 表头：代理昵称、新增玩家昵称、新增玩家ID  新增时间  这4个数据
+
+selects:
+  - server: ZgmjLog
+    statments:
+      - id: 0
+        based: ~
+        names:
+          player_id: ~
+        sql: CALL new_users('2018-06-01', '2018-06-03')
+        save: false
+
+  - server: ZgmjGame
+    statments:
+      - id: 1
+        based: 0
+        names:
+          player_id: ~
+        sql: SELECT playerId from t_record_time WHERE playedTime between '2018-06-01' and '2018-06-03' and playerId IN ( %(player_id)s )
+        save: false
+
+      - id: 2
+        based: 1
+        names:
+          player_id: 玩家ID
+          player_name: 玩家昵称
+          reg_time: 玩家注册时间
+          bind_id: 绑定代理ID
+        sql: SELECT p.id, p.playerName, a.reg_time, p.bingAgentId FROM `tb_player` p JOIN tb_acc a ON p.id=a.Id WHERE p.id IN ( %(player_id)s )
+        save: true
+
+  - server: ZgmjAgent
+    statments:
+      - id: 3
+        based: 2
+        names:
+          agent_name: 代理昵称
+          bind_id: 绑定代理ID
+        sql: SELECT `name`, bind_code from agent where bind_code in ( %(bind_id)s )
+        save: true
+
+handler: C:\\Users\\Administrator\\Desktop\\20180604.xlsx

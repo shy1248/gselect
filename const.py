@@ -38,9 +38,9 @@ ZG_P_IP = '10.247.0.12'
 # database port
 DB_PORT = 3306
 # database username
-DB_USER = 'readuser'
+DB_USER = 'cdb_outerroot'
 # database password
-DB_PASS = 'jmdb_read'
+DB_PASS = '9WCkn%J^ydIp'
 
 # common used databases
 # lymj game

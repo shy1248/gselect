@@ -1,4 +1,5 @@
-#
+# 某天登录玩家代理绑定信息
+
 selects:
   - server: ZgmjLog
     statments:
