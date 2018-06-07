@@ -1,0 +1,36 @@
+# 自贡麻将6月1~6号代理新增绑定玩家数据，而且这些玩家是要上过游戏的活跃用户
+# 代理昵称、代理电话、新增玩家昵称、新增玩家ID  新增时间
+
+selects:
+
+  - server: ZgmjGame
+    statments:
+      - id: 0
+        based: ~
+        names:
+          player_id: ~
+        sql: SELECT DISTINCT playerId FROM t_record_time WHERE playedTime BETWEEN '2018-06-01 00:00:00' AND '2018-06-06 23:59:59'
+        save: false
+
+      - id: 1
+        based: 0
+        names:
+          player_id: 新增玩家ID
+          player_name: 新增玩家昵称
+          bind_time: 新增时间
+          bind_code: 绑定Code
+        sql: SELECT id, playerName, FROM_UNIXTIME(bindTime/1000), bingAgentId FROM tb_player WHERE bindTime BETWEEN UNIX_TIMESTAMP('2018-06-01 00:00:00')*1000 AND UNIX_TIMESTAMP('2018-06-06 23:59:59')*1000 AND id IN (%(player_id)s)
+        save: true
+
+  - server: ZgmjAgent
+    statments:
+      - id: 2
+        based: 1
+        names:
+          agent_name: 绑定代理名称
+          login_id: 绑定代理ID
+          bind_code: 绑定ID
+        sql: SELECT a.`name`, a.login_id, a.bind_code FROM agent a WHERE a.bind_code IN ( %(bind_code)s )
+        save: true
+
+handler: C:\\Users\\Administrator\\Desktop\\20180606.xlsx

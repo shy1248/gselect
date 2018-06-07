@@ -36,8 +36,9 @@ selects:
         based: 2
         names:
           agent_name: 代理昵称
+          login_id: 代理电话
           bind_id: 绑定代理ID
-        sql: SELECT `name`, bind_code from agent where bind_code in ( %(bind_id)s )
+        sql: SELECT `name`, login_id, bind_code from agent where bind_code in ( %(bind_id)s )
         save: true
 
 handler: C:\\Users\\Administrator\\Desktop\\20180604.xlsx

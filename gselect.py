@@ -154,8 +154,7 @@ class Statment(object):
             raise RuntimeError('Server \'{}\' is not defined.'.format(
                 self.ser))
 
-        rs = server.do_select(self.sql)
-        self.result = rs
+        self.result = server.do_select(self.sql)
 
 
 class Handler(object):
@@ -199,7 +198,8 @@ if __name__ == '__main__':
     file = args_parse()
     with open(file, 'r', encoding='UTF-8') as f:
         conf = yaml.load(f)
-    # pase playbook
+
+    # parse playbook
     stmts = []
     print('==> Parser config file ...')
     for select in conf['selects']:
@@ -221,6 +221,7 @@ if __name__ == '__main__':
 
             stmt = Statment(ser, id_, based, names, sql, save)
             stmts.append(stmt)
+
     # execute statment
     for stmt in stmts:
         if stmt.id_ == 0 and stmt.based is not None:
